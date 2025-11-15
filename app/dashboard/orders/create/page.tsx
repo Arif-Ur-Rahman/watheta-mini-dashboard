@@ -31,6 +31,9 @@ export default function CreateOrderPage() {
     description?: string
   } | null>(null)
 
+  // ----------------------------
+  // FORM SETUP
+  // ----------------------------
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
@@ -44,14 +47,45 @@ export default function CreateOrderPage() {
     },
   })
 
-  const { fields, append, remove } = useFieldArray({
+  // ----------------------------
+  // FIELD ARRAYS
+  // ----------------------------
+  const {
+    fields: productFields,
+    append: appendProduct,
+    remove: removeProduct,
+  } = useFieldArray({
     control: form.control,
     name: 'productIds',
   })
 
+  const {
+    fields: quantityFields,
+    append: appendQuantity,
+    remove: removeQuantity,
+  } = useFieldArray({
+    control: form.control,
+    name: 'quantities',
+  })
+
+  // Keep arrays in sync
+  const addProductRow = () => {
+    appendProduct('')
+    appendQuantity(1)
+  }
+
+  const removeProductRow = (index: number) => {
+    removeProduct(index)
+    removeQuantity(index)
+  }
+
+  // WATCH FORM FIELDS
   const selectedProducts = form.watch('productIds')
   const quantities = form.watch('quantities')
 
+  // ----------------------------
+  // CALCULATIONS
+  // ----------------------------
   const totalAmount = selectedProducts.reduce((sum, productId, index) => {
     const product = mockProducts.find((p) => p.id === productId)
     return sum + (product?.price || 0) * (quantities[index] || 1)
@@ -59,6 +93,9 @@ export default function CreateOrderPage() {
 
   const orderId = `ORD-${String(Math.floor(Math.random() * 100000)).padStart(6, '0')}`
 
+  // ----------------------------
+  // SUBMIT HANDLER
+  // ----------------------------
   const onSubmit = async (data: OrderFormValues) => {
     setIsSubmitting(true)
     try {
@@ -86,17 +123,19 @@ export default function CreateOrderPage() {
 
   return (
     <div className="space-y-6">
+      {/* Notification */}
       {notification && (
         <NotificationAlert
           type={notification.type}
           title={notification.title}
           description={notification.description}
           onClose={() => setNotification(null)}
-          autoClose={notification.type === 'success'}
+         autoClose={notification.type === 'success'}
           duration={notification.type === 'success' ? 1500 : 4000}
         />
       )}
 
+      {/* Back Button */}
       <Link href="/dashboard/orders">
         <Button variant="ghost" className="gap-2 -ml-2">
           <ArrowLeft className="w-4 h-4" />
@@ -104,12 +143,14 @@ export default function CreateOrderPage() {
         </Button>
       </Link>
 
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Create Order</h1>
         <p className="text-muted-foreground mt-1">Create a new customer order</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* LEFT CONTENT */}
         <div className="lg:col-span-2 space-y-6">
           {/* Order Information */}
           <Card>
@@ -118,12 +159,14 @@ export default function CreateOrderPage() {
               <CardDescription>Basic order details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Order ID */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Order ID</label>
                 <Input value={orderId} disabled className="bg-muted" />
                 <p className="text-xs text-muted-foreground mt-1">Auto-generated</p>
               </div>
 
+              {/* Client Name */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Client Name</label>
                 <Input
@@ -132,34 +175,40 @@ export default function CreateOrderPage() {
                   className={form.formState.errors.clientName ? 'border-red-500' : ''}
                 />
                 {form.formState.errors.clientName && (
-                  <p className="text-xs text-red-500 mt-1">{form.formState.errors.clientName.message}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {form.formState.errors.clientName.message}
+                  </p>
                 )}
               </div>
 
+              {/* Delivery Address */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Delivery Address</label>
                 <Textarea
                   placeholder="Enter delivery address..."
                   {...form.register('deliveryAddress')}
-                  className={form.formState.errors.deliveryAddress ? 'border-red-500' : ''}
                   rows={3}
+                  className={form.formState.errors.deliveryAddress ? 'border-red-500' : ''}
                 />
                 {form.formState.errors.deliveryAddress && (
-                  <p className="text-xs text-red-500 mt-1">{form.formState.errors.deliveryAddress.message}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {form.formState.errors.deliveryAddress.message}
+                  </p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Products */}
+          {/* PRODUCTS */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Products</CardTitle>
               <CardDescription>Select products and quantities</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {fields.map((field, index) => (
+              {productFields.map((field, index) => (
                 <div key={field.id} className="flex gap-2">
+                  {/* Product Select */}
                   <div className="flex-1">
                     <label className="text-sm font-medium mb-1 block">Product</label>
                     <Select
@@ -172,13 +221,14 @@ export default function CreateOrderPage() {
                       <SelectContent>
                         {mockProducts.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name} (${(product.price || 0).toFixed(2)})
+                            {product.name} (${product.price.toFixed(2)})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
+                  {/* Quantity */}
                   <div className="w-24">
                     <label className="text-sm font-medium mb-1 block">Qty</label>
                     <Input
@@ -188,12 +238,14 @@ export default function CreateOrderPage() {
                     />
                   </div>
 
-                  {fields.length > 1 && (
+                  {/* Remove Row */}
+                  {productFields.length > 1 && (
                     <div className="flex items-end">
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
-                        onClick={() => remove(index)}
+                        onClick={() => removeProductRow(index)}
                         className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -203,13 +255,11 @@ export default function CreateOrderPage() {
                 </div>
               ))}
 
+              {/* Add Product Button */}
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  append('')
-                  form.setValue(`quantities.${fields.length}`, 1)
-                }}
+                onClick={addProductRow}
                 className="w-full gap-2"
               >
                 <Plus className="w-4 h-4" />
@@ -225,11 +275,12 @@ export default function CreateOrderPage() {
               <CardDescription>Set payment and delivery status</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Payment Status */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Payment Status</label>
                 <Select
                   value={form.watch('paymentStatus')}
-                  onValueChange={(value: any) => form.setValue('paymentStatus', value)}
+                  onValueChange={(value) => form.setValue('paymentStatus', value as any)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -242,11 +293,12 @@ export default function CreateOrderPage() {
                 </Select>
               </div>
 
+              {/* Delivery Status */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Delivery Status</label>
                 <Select
                   value={form.watch('deliveryStatus')}
-                  onValueChange={(value: any) => form.setValue('deliveryStatus', value)}
+                  onValueChange={(value) => form.setValue('deliveryStatus', value as any)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -260,19 +312,22 @@ export default function CreateOrderPage() {
                 </Select>
               </div>
 
+              {/* Expected Delivery Date */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Expected Delivery Date</label>
                 <Input
                   type="date"
                   {...form.register('expectedDeliveryDate')}
-                  className={form.formState.errors.expectedDeliveryDate ? 'border-red-500' : ''}
+                  className={
+                    form.formState.errors.expectedDeliveryDate ? 'border-red-500' : ''
+                  }
                 />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Sidebar */}
+        {/* RIGHT SIDEBAR */}
         <div className="space-y-6">
           {/* Order Summary */}
           <Card>
@@ -290,7 +345,9 @@ export default function CreateOrderPage() {
                       <span className="text-muted-foreground">
                         {product.name} x{quantities[index]}
                       </span>
-                      <span className="font-medium">${((product.price || 0) * (quantities[index] || 1)).toFixed(2)}</span>
+                      <span className="font-medium">
+                        ${(product.price * quantities[index]).toFixed(2)}
+                      </span>
                     </div>
                   )
                 })}
@@ -299,11 +356,13 @@ export default function CreateOrderPage() {
               <div className="border-t border-border pt-3">
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span>${(totalAmount || 0).toFixed(2)}</span>
+                  <span>${totalAmount.toFixed(2)}</span>
                 </div>
               </div>
 
-              <Badge className="w-full justify-center">{selectedProducts.length} product(s)</Badge>
+              <Badge className="w-full justify-center">
+                {selectedProducts.length} product(s)
+              </Badge>
             </CardContent>
           </Card>
 
