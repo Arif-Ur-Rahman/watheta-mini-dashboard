@@ -1,3 +1,4 @@
+// src/app/dashboard/orders/[id]/page.tsx
 'use client'
 
 import { ArrowLeft } from 'lucide-react'
@@ -7,15 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { mockOrders, mockProducts } from '@/lib/mock-data'
+import type { Order } from '@/lib/schemas'
 
 interface OrderDetailsPageProps {
-  params: {
-    id: string
-  }
+  params: { id: string }
 }
 
 export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
-  const order = mockOrders.find((o) => o.id === params.id)
+  const order = mockOrders.find(o => o.id === params.id) as Order | undefined
 
   if (!order) {
     return (
@@ -33,10 +33,15 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
     )
   }
 
-  const initials = order.clientName.split(' ').map((n) => n[0]).join('').toUpperCase()
-  const products = order.productIds.map((id, index) => ({
-    product: mockProducts.find((p) => p.id === id),
-    quantity: order.quantities[index],
+  const initials = order.clientName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+
+  const products = order.orderItems.map(item => ({
+    product: mockProducts.find(p => p.id === item.productId),
+    quantity: item.quantity,
   }))
 
   return (
@@ -51,7 +56,9 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Order {order.id}</h1>
-          <p className="text-muted-foreground mt-1">Created {order.createdAt.toLocaleDateString()}</p>
+          <p className="text-muted-foreground mt-1">
+            Created {order.createdAt.toLocaleDateString()}
+          </p>
         </div>
       </div>
 
@@ -126,15 +133,20 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {products.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                {products.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 border border-border rounded-lg"
+                  >
                     <div>
-                      <p className="font-medium">{item.product?.name}</p>
-                      <p className="text-sm text-muted-foreground">SKU: {item.product?.sku}</p>
+                      <p className="font-medium">{item.product?.name ?? '—'}</p>
+                      <p className="text-sm text-muted-foreground">SKU: {item.product?.sku ?? '—'}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-medium">x{item.quantity}</p>
-                      <p className="text-sm text-muted-foreground">${(item.product?.price || 0).toFixed(2)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        ${(item.product?.price ?? 0).toFixed(2)}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -153,12 +165,12 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
             <CardContent className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>${(order.totalAmount || 0).toFixed(2)}</span>
+                <span>${order.totalAmount.toFixed(2)}</span>
               </div>
               <div className="border-t border-border pt-3">
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span>${(order.totalAmount || 0).toFixed(2)}</span>
+                  <span>${order.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
@@ -181,7 +193,11 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
               <div>
                 <p className="text-muted-foreground">Feedback</p>
                 <p className="text-lg">
-                  {order.customerFeedback === 'happy' ? '😊' : order.customerFeedback === 'neutral' ? '😐' : '😞'}
+                  {order.customerFeedback === 'happy'
+                    ? 'happy'
+                    : order.customerFeedback === 'neutral'
+                      ? 'neutral'
+                      : 'unhappy'}
                 </p>
               </div>
             </CardContent>
