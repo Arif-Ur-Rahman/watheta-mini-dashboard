@@ -1,3 +1,4 @@
+// src/lib/schemas.ts
 import { z } from 'zod'
 
 export const productFormSchema = z.object({
@@ -14,8 +15,14 @@ export type ProductFormValues = z.infer<typeof productFormSchema>
 
 export const orderFormSchema = z.object({
   clientName: z.string().min(1, 'Client name is required'),
-  productIds: z.array(z.string()).min(1, 'Select at least one product'),
-  quantities: z.array(z.coerce.number().positive()).min(1),
+  orderItems: z
+    .array(
+      z.object({
+        productId: z.string().min(1, 'Product is required'),
+        quantity: z.coerce.number().positive('Quantity must be at least 1'),
+      })
+    )
+    .min(1, 'Select at least one product'),
   paymentStatus: z.enum(['Paid', 'Pending', 'Refunded']),
   deliveryStatus: z.enum(['Pending', 'Shipped', 'Delivered', 'Canceled']),
   expectedDeliveryDate: z.coerce.date(),
@@ -23,3 +30,17 @@ export const orderFormSchema = z.object({
 })
 
 export type OrderFormValues = z.infer<typeof orderFormSchema>
+
+export interface OrderItem {
+  productId: string
+  quantity: number
+}
+
+export interface Order extends Omit<OrderFormValues, 'orderItems'> {
+  id: string
+  orderItems: OrderItem[]
+  totalAmount: number
+  deliveryProgress: number
+  customerFeedback: 'happy' | 'neutral' | 'unhappy'
+  createdAt: Date
+}

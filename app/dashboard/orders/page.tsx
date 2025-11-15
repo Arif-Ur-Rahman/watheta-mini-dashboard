@@ -1,3 +1,4 @@
+// src/app/dashboard/orders/page.tsx
 'use client'
 
 import { useState, useMemo } from 'react'
@@ -30,24 +31,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { mockOrders, mockProducts } from '@/lib/mock-data'
+import { mockOrders } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
 import { Progress } from '@/components/ui/progress'
-
-interface Order {
-  id: string
-  clientName: string
-  productIds: string[]
-  quantities: number[]
-  totalAmount: number
-  paymentStatus: 'Paid' | 'Pending' | 'Refunded'
-  deliveryStatus: 'Pending' | 'Shipped' | 'Delivered' | 'Canceled'
-  deliveryProgress: number
-  expectedDeliveryDate: Date
-  deliveryAddress: string
-  customerFeedback: 'happy' | 'neutral' | 'unhappy'
-  createdAt: Date
-}
+import type { Order } from '@/lib/schemas'
 
 const PaymentStatusBadge = ({ status }: { status: string }) => {
   const variants: Record<string, { color: string; bg: string }> = {
@@ -80,23 +67,22 @@ const DeliveryStatusBadge = ({ status }: { status: string }) => {
 
 const FeedbackIndicator = ({ feedback }: { feedback: string }) => {
   const indicators: Record<string, string> = {
-    happy: '😊',
-    neutral: '😐',
-    unhappy: '😞',
+    happy: 'happy',
+    neutral: 'neutral',
+    unhappy: 'unhappy',
   }
 
-  return <span className="text-lg">{indicators[feedback] || '😐'}</span>
+  return <span className="text-lg">{indicators[feedback] || 'neutral'}</span>
 }
 
 export default function OrdersPage() {
   const [sorting, setSorting] = useState<SortingState>([])
   const [orders, setOrders] = useState<Order[]>(mockOrders)
 
-  // Calculate metrics
   const metrics = useMemo(() => {
     const total = orders.length
-    const delivered = orders.filter((o) => o.deliveryStatus === 'Delivered').length
-    const pending = orders.filter((o) => o.deliveryStatus === 'Pending').length
+    const delivered = orders.filter(o => o.deliveryStatus === 'Delivered').length
+    const pending = orders.filter(o => o.deliveryStatus === 'Pending').length
     const avgSatisfaction = (
       orders.reduce((sum, o) => {
         if (o.customerFeedback === 'happy') return sum + 5
@@ -124,7 +110,7 @@ export default function OrdersPage() {
       cell: ({ row }) => {
         const initials = row.original.clientName
           .split(' ')
-          .map((n) => n[0])
+          .map(n => n[0])
           .join('')
           .toUpperCase()
 
@@ -190,9 +176,7 @@ export default function OrdersPage() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => {
-                setOrders(orders.filter((o) => o.id !== row.original.id))
-              }}
+              onClick={() => setOrders(orders.filter(o => o.id !== row.original.id))}
               className="text-red-600"
             >
               <Trash2 className="w-4 h-4 mr-2" />
@@ -210,9 +194,7 @@ export default function OrdersPage() {
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    state: {
-      sorting,
-    },
+    state: { sorting },
     onSortingChange: setSorting,
   })
 
@@ -283,9 +265,9 @@ export default function OrdersPage() {
           <div className="rounded-md border border-border overflow-x-auto">
             <Table>
               <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
+                {table.getHeaderGroups().map(headerGroup => (
                   <TableRow key={headerGroup.id} className="bg-muted/50">
-                    {headerGroup.headers.map((header) => (
+                    {headerGroup.headers.map(header => (
                       <TableHead
                         key={header.id}
                         onClick={header.column.getToggleSortingHandler()}
@@ -319,9 +301,9 @@ export default function OrdersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  table.getRowModel().rows.map((row) => (
+                  table.getRowModel().rows.map(row => (
                     <TableRow key={row.id} className="hover:bg-muted/50">
-                      {row.getVisibleCells().map((cell) => (
+                      {row.getVisibleCells().map(cell => (
                         <TableCell key={cell.id} className="px-4 py-3">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
@@ -336,7 +318,9 @@ export default function OrdersPage() {
           {/* Pagination */}
           <div className="flex items-center justify-between gap-2">
             <div className="text-sm text-muted-foreground">
-              Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
+              Showing{' '}
+              {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}{' '}
+              to{' '}
               {Math.min(
                 (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
                 orders.length,
