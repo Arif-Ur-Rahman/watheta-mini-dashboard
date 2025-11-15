@@ -61,7 +61,7 @@ export function TopBar({ onSidebarToggle }: TopBarProps) {
         </Button>
 
         <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-primary text-primary-foreground">AD</AvatarFallback>
+          <AvatarFallback className="bg-primary text-primary-foreground">Arif</AvatarFallback>
         </Avatar>
       </div>
     </header>
